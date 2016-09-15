@@ -1,7 +1,4 @@
-__author__ = 'Nicholas Harding'
-__version__ = "v0.7.0"
-
-# script to run an XPCLR scan
+# functions to run an XPCLR scan
 
 # TO DO:
 #1 add code to read in from text file as GenotypedChunkedArray. Talk to AM.
@@ -28,7 +25,11 @@ def estimate_omega(q1, q2):
     :param q2: array of alt allele freq in pop2
     :return:
     """
-    return np.mean(((q1-q2)**2)/(q2*(1-q2)))
+
+    assert np.all(0 < q2 < 1), "No SNPs in p2 can be fixed."
+    w = np.mean(((q1-q2)**2)/(q2*(1-q2)))
+
+    return w
 
 
 def determine_c(r, s, effective_pop_size=20000, min_rd=1e-7):
@@ -213,16 +214,18 @@ def compute_xpclr(dat):
 
 def determine_window(pos, start_, stop_, maximum_size):
 
-    start_ix = np.searchsorted(a=pos, v=start_)
-    stop_ix = np.searchsorted(a=pos, v=stop_)
+    start_ix = int(np.searchsorted(a=pos, v=start_))
+    stop_ix = int(np.searchsorted(a=pos, v=stop_))
 
     if (stop_ix - start_ix) > maximum_size:
         # window is too large. I require that the window is symmetrical
-        midpoint = (stop_ix + start_ix)//2
-        start_ix = midpoint - maximum_size//2
-        stop_ix = midpoint + maximum_size//2
+        ix = np.sort(np.random.choice(range(start_ix, stop_ix),
+                                      size=maximum_size, replace=False))
 
-    return slice(start_ix, stop_ix)
+    else:
+        ix = np.arange(start_ix, stop_ix).astype("int")
+
+    return ix, (stop_ix - start_ix)
 
 
 def determine_weights(genotypes, ldcutoff, isphased=False):
@@ -248,19 +251,20 @@ def xpclr_scan(gt1, gt2, bpositions, windows, geneticd=None, ldcutoff=0.95,
             print("No genetic distance provided; using rrate of {0}"
                   .format(rrate))
 
-    allele_c1 = gt1.count_alleles()
-    allele_c2 = gt2.count_alleles()
-    w = estimate_omega(q1=allele_c1.to_frequencies()[:, 1],
-                       q2=allele_c2.to_frequencies()[:, 1])
+    ac1 = gt1.count_alleles()
+    ac2 = gt2.count_alleles()
+    w = estimate_omega(q1=ac1.to_frequencies()[:, 1],
+                       q2=ac2.to_frequencies()[:, 1])
     if verbose:
         print("omega: {0}".format(w))
 
-    count_calls = allele_c1.sum(axis=1)
-    count_alt = allele_c1[:, 1]
-    p2_freqs = allele_c2.to_frequencies()[:, 1]
+    count_calls = ac1.sum(axis=1)
+    count_alt = ac1[:, 1]
+    p2_freqs = ac2.to_frequencies()[:, 1]
 
     li_data = np.zeros((windows.shape[0], 3))
     nsnp = np.zeros(windows.shape[0], dtype="int")
+    nsnp_avail = np.zeros(windows.shape[0], dtype="int")
     ixspan = np.zeros(windows.shape, dtype="int")
 
     for i, (start, end) in enumerate(windows):
@@ -269,21 +273,24 @@ def xpclr_scan(gt1, gt2, bpositions, windows, geneticd=None, ldcutoff=0.95,
             print("Processing window {0}/{1}...".
                   format(i + 1, windows.shape[0]))
 
-        ix = determine_window(bpositions, start, end, maxsnps)
-        nsnp[i] = ix.stop - ix.start
-        ixspan[i] = np.take(bpositions, (ix.start, ix.stop - 1))
+        ix, n_avail = determine_window(bpositions, start, end, maxsnps)
+        nsnp[i] = ix.size
+        nsnp_avail[i] = n_avail
+
+        ixspan[i] = np.take(bpositions, (ix[0], ix[-1]))
         if nsnp[i] < minsnps:
             # if not enough data in window, skip
             li_data[i] = np.repeat(np.nan, 3)
             continue
 
-        weights = determine_weights(gt1[ix], ldcutoff=ldcutoff,
+        weights = determine_weights(gt1.take(ix, axis=0), ldcutoff=ldcutoff,
                                     isphased=phased)
         distance = np.abs(geneticd[ix] - geneticd[ix].mean())
 
         # combine_arrays into single array for easier passing
-        window_data = np.vstack((count_alt[ix], count_calls[ix],
-                                 distance, p2_freqs[ix],
+        window_data = np.vstack((count_alt.take(ix, axis=0),
+                                 count_calls.take(ix, axis=0),
+                                 distance, p2_freqs.take(ix),
                                  np.repeat(w, distance.size),
                                  weights)).T
 
@@ -293,4 +300,4 @@ def xpclr_scan(gt1, gt2, bpositions, windows, geneticd=None, ldcutoff=0.95,
         print("...done")
 
     # modelL, nullL, selcoef, n snps, actual window edges.
-    return li_data.T[0], li_data.T[1], li_data.T[2], nsnp, ixspan
+    return li_data.T[0], li_data.T[1], li_data.T[2], nsnp, nsnp_avail, ixspan

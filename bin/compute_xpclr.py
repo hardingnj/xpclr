@@ -1,3 +1,5 @@
+#! /usr/bin/python
+
 import argparse
 import allel
 import numpy as np
@@ -44,11 +46,11 @@ def load_text_format_data(mapfn, pop_a_fn, pop_b_fn):
     return geno1, geno2, allel.SortedIndex(vartbl.POS[:]), vartbl.GDist[:]
 
 
-def tabulate_results(chrom, model_li, null_li, selectionc, counts, windows,
-                     edges):
+def tabulate_results(chrom, model_li, null_li, selectionc,
+                     counts, count_avail, windows, edges):
 
-    lidf = pd.DataFrame(np.vstack((model_li, null_li, selectionc, counts)).T,
-                        columns=["modelL", "nullL", "sel_coef", "nSNPs"])
+    lidf = pd.DataFrame(np.vstack((model_li, null_li, selectionc, counts, count_avail)).T,
+                        columns=["modelL", "nullL", "sel_coef", "nSNPs", "nSNPs_avail"])
 
     # these are the nominal windows
     winf = pd.DataFrame(windows, columns=["start", "stop"])
@@ -195,13 +197,13 @@ spacing = np.arange(args.start, args.stop, args.step)
 scan_windows = np.vstack([spacing, spacing - 1 + args.size]).T
 
 # main function
-modelL, nullL, selcoef, nsnps, snpedges = \
+modelL, nullL, selcoef, nsnps, navail, snpedges = \
     xpclr.xpclr_scan(g1, g2, positions, scan_windows, geneticd=genetic_dist,
                      ldcutoff=args.ldcutoff, phased=args.phased,
                      maxsnps=args.maxsnps, minsnps=args.minsnps,
                      rrate=args.rrate)
 
 df = tabulate_results(chromosome, modelL, nullL, selcoef,
-                      nsnps, scan_windows, snpedges)
+                      nsnps, navail, scan_windows, snpedges)
 
 df.to_csv(fn, sep="\t", index=False)
