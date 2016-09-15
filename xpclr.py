@@ -26,7 +26,7 @@ def estimate_omega(q1, q2):
     :return:
     """
 
-    assert np.all(0 < q2 < 1), "No SNPs in p2 can be fixed."
+    assert np.all(0 < q2) and np.all(q2 < 1), "No SNPs in p2 can be fixed."
     w = np.mean(((q1-q2)**2)/(q2*(1-q2)))
 
     return w
@@ -47,6 +47,8 @@ def determine_c(r, s, effective_pop_size=20000, min_rd=1e-7):
 
 
 # This is the function that needs to be called alot and could be cythonized
+# given a set of potential p1s, we wish to know the probability density at each
+# value of p1.
 def pdf(p1, data):
 
     """
@@ -83,6 +85,8 @@ def pdf(p1, data):
     return r
 
 
+# This is a simple wrapper function to pdf that combines it with the binomial
+# probability of n/x alleles.
 def pdf_integral(p1, data):
 
     # calculate pdens for range of p1
@@ -92,6 +96,11 @@ def pdf_integral(p1, data):
     return np.exp(np.log(dens) + binom.logpmf(xj, nj, p=p1))
 
 
+# This is recoded from the implementation of xpclr. I do not think it represents
+# what is discussed in the paper. Here we take the integral of eq 5 in the paper
+# then take the ratio of it to eq 5 without the binomial component.
+# additionally they neglect the probability of p1 being 0 or 1, I presume to
+# allow the romberg integration to converge ok.
 def chen_likelihood(values):
 
     with warnings.catch_warnings(record=True) as w:
@@ -99,6 +108,7 @@ def chen_likelihood(values):
         # Cause all warnings to always be triggered.
         warnings.simplefilter("always")
 
+        # These 2 function calls are major speed bottlenecks.
         i_likl = romberg(pdf_integral, a=0.001, b=0.999, args=(values,),
                          divmax=50, vec_func=True, tol=1.48e-6)
 
@@ -119,8 +129,9 @@ def chen_likelihood(values):
 
 # similar to above but I think this is what it says in the paper
 # instead of normalizing by the other distribution we take the integral over
-# 0-1. Not 0.001 - 0.999 and normalize. Eseentially they say af of pop1, cannot
-# be 0 or 1. I think this is a convenience hack for romberg integration?
+# 0-1. Not 0.001 - 0.999 and normalize. Essentially they say af of pop1, cannot
+# be 0 or 1. I think this is a convenience hack for romberg integration? NOTE
+# does not work with Romberg integration!
 def harding_likelihood(values):
 
     print("Not to be used as Romberg does not work on non cont diffs")

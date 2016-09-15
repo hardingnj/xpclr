@@ -7,6 +7,6 @@ setup(name='xpclr',
       author='Nicholas Harding',
       author_email='njh@well.ox.ac.uk',
       license='MIT',
-      packages=['xpclr'],
+      py_modules=['xpclr'],
       scripts=["bin/compute_xpclr.py"],
       zip_safe=False)
