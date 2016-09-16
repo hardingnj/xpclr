@@ -269,7 +269,7 @@ def xpclr_scan(gt1, gt2, bpositions, windows, geneticd=None, ldcutoff=0.95,
     if verbose:
         print("omega: {0}".format(w))
 
-    count_calls = ac1.sum(axis=1)
+    count_calls = ac1.sum(axis=1)[:]
     count_alt = ac1[:, 1]
     p2_freqs = ac2.to_frequencies()[:, 1]
 
