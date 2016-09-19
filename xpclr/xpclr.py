@@ -101,7 +101,14 @@ def pdf_integral(p1, data):
 # then take the ratio of it to eq 5 without the binomial component.
 # additionally they neglect the probability of p1 being 0 or 1, I presume to
 # allow the romberg integration to converge ok.
+# This calculates the likelihood of a given SNP
 def chen_likelihood(values):
+
+    """
+    :param values: is an array of nobserved alt alleles, total obs alleles, c,
+    p2freq, and var.
+    :return: The likelihood ratio of the two likelihoods.
+    """
 
     with warnings.catch_warnings(record=True) as w:
 
@@ -296,7 +303,9 @@ def xpclr_scan(gt1, gt2, bpositions, windows, geneticd=None, ldcutoff=0.95,
 
         weights = determine_weights(gt1.take(ix, axis=0), ldcutoff=ldcutoff,
                                     isphased=phased)
-        distance = np.abs(geneticd[ix] - geneticd[ix].mean())
+
+        dq = np.take(geneticd, ix)
+        distance = np.abs(dq - dq.mean())
 
         # combine_arrays into single array for easier passing
         window_data = np.vstack((count_alt.take(ix, axis=0),
