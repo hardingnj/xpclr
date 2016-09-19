@@ -65,7 +65,7 @@ def tabulate_results(chrom, model_li, null_li, selectionc,
 
     out.insert(0, "chrom", np.repeat(chrom, len(out)))
 
-    string_id = ["{0}_{1:08d}_{2:08d}".format(r.chrom, r.pos_start, r.pos_stop)
+    string_id = ["{0}_{1:08d}_{2:08d}".format(r.chrom, r.start, r.stop)
                  for i, r in out.iterrows()]
     out.insert(0, "id", string_id)
 
@@ -119,6 +119,9 @@ psr.add_argument('--ld', '-L', dest='ldcutoff', action='store',
 psr.add_argument('--phased', '-P', dest='phased', action='store_true',
                  help='whether data is phased for more precise r2 calculation')
 
+psr.add_argument('--verbose', '-V', dest='verbose', action='store_true',
+                 help='whether to be verbose')
+
 psr.add_argument('--maxsnps', '-M', dest='maxsnps', action='store',
                  default=200, help='max SNPs in a window')
 psr.add_argument('--minsnps', '-N', dest='minsnps', action='store',
@@ -138,7 +141,7 @@ args = psr.parse_args()
 
 fn = args.out
 sh.touch(fn)    # so that we know at the start whether we have write access
-print("XP_CLR/scikit-allel: {0}".format(xpclr.__version__))
+print("xpclr v{0}".format(xpclr.__version__))
 chromosome = args.chrom
 
 # if mode is "hdf5"
@@ -172,8 +175,10 @@ print("EXCLUDING: {0} SNPs as missing in all samples in a population"
       .format(np.sum(missing & ~multiallelic)))
 
 # drop if fixed in AC2,
-fixed_p2 = np.array(ac2.is_non_segregating())
-print("EXCLUDING: {0} SNPs as invariant in population 2"
+fixed_p2 = ac2.is_non_segregating()[:] | \
+    ac2.is_singleton(0)[:] | \
+    ac2.is_singleton(1)[:]
+print("EXCLUDING: {0} SNPs as invariant or singleton in population 2"
       .format(np.sum(fixed_p2 & ~missing & ~multiallelic)))
 
 # now compress all!
@@ -201,7 +206,7 @@ modelL, nullL, selcoef, nsnps, navail, snpedges = \
     xpclr.xpclr_scan(g1, g2, positions, scan_windows, geneticd=genetic_dist,
                      ldcutoff=args.ldcutoff, phased=args.phased,
                      maxsnps=args.maxsnps, minsnps=args.minsnps,
-                     rrate=args.rrate)
+                     rrate=args.rrate, verbose=args.verbose)
 
 df = tabulate_results(chromosome, modelL, nullL, selcoef,
                       nsnps, navail, scan_windows, snpedges)

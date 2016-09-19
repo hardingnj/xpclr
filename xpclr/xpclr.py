@@ -269,6 +269,8 @@ def xpclr_scan(gt1, gt2, bpositions, windows, geneticd=None, ldcutoff=0.95,
             print("No genetic distance provided; using rrate of {0}"
                   .format(rrate))
 
+    assert minsnps >= 2, "Minimum SNPs cannot be set at any fewer than 2"
+
     ac1 = gt1.count_alleles()
     ac2 = gt2.count_alleles()
     w = estimate_omega(q1=ac1.to_frequencies()[:, 1],
@@ -292,14 +294,16 @@ def xpclr_scan(gt1, gt2, bpositions, windows, geneticd=None, ldcutoff=0.95,
                   format(i + 1, windows.shape[0]))
 
         ix, n_avail = determine_window(bpositions, start, end, maxsnps)
+
         nsnp[i] = ix.size
         nsnp_avail[i] = n_avail
 
-        ixspan[i] = np.take(bpositions, (ix[0], ix[-1]))
         if nsnp[i] < minsnps:
             # if not enough data in window, skip
             li_data[i] = np.repeat(np.nan, 3)
             continue
+
+        ixspan[i] = np.take(bpositions, (ix[0], ix[-1]))
 
         weights = determine_weights(gt1.take(ix, axis=0), ldcutoff=ldcutoff,
                                     isphased=phased)
