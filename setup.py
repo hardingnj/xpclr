@@ -51,6 +51,7 @@ def setup_package():
         version=VERSION,
         package_dir={'': '.'},
         packages=['xpclr'],
+        scripts=['bin/xpclr'],
         classifiers=CLASSIFIERS,
         install_requires=INSTALL_REQUIRES,
     )

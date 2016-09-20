@@ -11,7 +11,7 @@ import numpy as np
 from scipy.spatial.distance import squareform
 from scipy.optimize import minimize_scalar
 from scipy.stats import binom
-from scipy.integrate import romberg
+from scipy.integrate import romberg, quad
 from bisect import bisect_right, bisect_left
 import allel
 from math import sqrt, pi
@@ -93,7 +93,12 @@ def pdf_integral(p1, data):
     xj, nj, c, p2, var = data
 
     dens = pdf(p1, data=data[2:])
-    return np.exp(np.log(dens) + binom.logpmf(xj, nj, p=p1))
+    bin_comp = binom.logpmf(xj, nj, p=p1)
+
+    # should think about whether I return the log or the value. I suspect the
+    # value is easier to integrate??
+    x = np.exp(np.log(dens) + bin_comp)
+    return x
 
 
 # This is recoded from the implementation of xpclr. I do not think it represents
@@ -116,13 +121,15 @@ def chen_likelihood(values):
         warnings.simplefilter("always")
 
         # These 2 function calls are major speed bottlenecks.
-        i_likl = romberg(pdf_integral, a=0.001, b=0.999, args=(values,),
-                         divmax=50, vec_func=True, tol=1.48e-6)
+        # to do: http://docs.scipy.org/doc/scipy/reference/tutorial/integrate
+        # .html#faster-integration-using-ctypes
+        i_likl = quad(pdf_integral, a=0.001, b=0.999, args=(values,),
+                      epsrel=0.001, epsabs=0, full_output=1)
 
-        i_base = romberg(pdf, a=0.001, b=0.999, args=(values[2:],),
-                         divmax=50, vec_func=True, tol=1.48e-6)
+        i_base = quad(pdf, a=0.001, b=0.999, args=(values[2:],),
+                      epsrel=0.001, epsabs=0, full_output=1)
 
-        ratio = np.log(float(i_likl)) - np.log(float(i_base))
+        ratio = np.log(i_likl[0]) - np.log(i_base[0])
 
         if np.isnan(ratio) or ratio == -np.inf:
             ratio = -1800
@@ -183,7 +190,7 @@ def calculate_cl_romberg(sc, indata):
     for j in range(indata.shape[0]):
 
         xj, nj, rd, p2freq, omega, weight = indata[j]
-        var = omega * (p2freq * (1 - p2freq))
+        var = determine_var(w=omega, q2=p2freq)
         c = determine_c(rd, sc)
 
         # allow this function to change
@@ -196,6 +203,17 @@ def calculate_cl_romberg(sc, indata):
 
     # return as +ve = wrong but handy for minimize function.
     return -ml
+
+
+def determine_var(w, q2):
+
+    """
+    :param w: omega as estimated
+    :param q2: allele freq of SNP in p2
+    :return: sigma2, estimate of variation
+    """
+
+    return w * (q2 * (1 - q2))
 
 
 def compute_xpclr(dat):
@@ -224,6 +242,8 @@ def compute_xpclr(dat):
     if null_model_li < maximum_li:
         print("Convergence failed.", res, null_model_li)
         return np.repeat(np.nan, 3)
+    elif null_model_li == maximum_li:
+        maxli_sc = 0.0
 
     # return maxL, L of null model, maxL sel coef and maxL rp
     # if null model is maxL model, sc=0, and rp is meaningless
