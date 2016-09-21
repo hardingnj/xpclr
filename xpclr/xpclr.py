@@ -16,6 +16,7 @@ from bisect import bisect_right, bisect_left
 import allel
 from math import sqrt, pi
 import warnings
+from functools import lru_cache
 
 
 ## FUNCTIONS ###################################################################
@@ -32,7 +33,18 @@ def estimate_omega(q1, q2):
     return w
 
 
-def determine_c(r, s, effective_pop_size=20000, min_rd=1e-7):
+def determine_var(w, q2):
+
+    """
+    :param w: omega as estimated
+    :param q2: allele freq of SNP in p2
+    :return: sigma2, estimate of variation
+    """
+
+    return w * (q2 * (1 - q2))
+
+
+def determine_c(r, s, effective_pop_size=20000, min_rd=1e-7, sf=5):
     """
     :param effective_pop_size: Ne of population
     :param r: recombination fraction
@@ -43,7 +55,8 @@ def determine_c(r, s, effective_pop_size=20000, min_rd=1e-7):
     if s <= 0:
         return 1.0
     else:
-        return 1 - np.exp(-np.log(2*effective_pop_size)*max(r, min_rd)/s)
+        c = 1 - np.exp(-np.log(2*effective_pop_size)*max(r, min_rd)/s)
+        return np.round(c, sf)
 
 
 # This is the function that needs to be called alot and could be cythonized
@@ -107,6 +120,7 @@ def pdf_integral(p1, data):
 # additionally they neglect the probability of p1 being 0 or 1, I presume to
 # allow the romberg integration to converge ok.
 # This calculates the likelihood of a given SNP
+@lru_cache(maxsize=2**16)
 def chen_likelihood(values):
 
     """
@@ -191,10 +205,10 @@ def calculate_cl_romberg(sc, indata):
 
         xj, nj, rd, p2freq, omega, weight = indata[j]
         var = determine_var(w=omega, q2=p2freq)
-        c = determine_c(rd, sc)
+        c = determine_c(rd, sc, sf=5)
 
         # allow this function to change
-        cl = calculate_likelihood(values=np.array([xj, nj, c, p2freq, var]))
+        cl = calculate_likelihood(values=(xj, nj, c, p2freq, var))
 
         marginall[j] = weight * cl
 
@@ -203,17 +217,6 @@ def calculate_cl_romberg(sc, indata):
 
     # return as +ve = wrong but handy for minimize function.
     return -ml
-
-
-def determine_var(w, q2):
-
-    """
-    :param w: omega as estimated
-    :param q2: allele freq of SNP in p2
-    :return: sigma2, estimate of variation
-    """
-
-    return w * (q2 * (1 - q2))
 
 
 def compute_xpclr(dat):
