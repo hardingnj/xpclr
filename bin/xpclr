@@ -5,8 +5,8 @@ import allel
 import numpy as np
 import xpclr
 import h5py
-import sh
 import pandas as pd
+import os
 
 
 # FUNCTIONS
@@ -140,7 +140,11 @@ args = psr.parse_args()
 
 
 fn = args.out
-sh.touch(fn)    # so that we know at the start whether we have write access
+outdir = os.path.dirname(fn)
+
+assert os.access(outdir, os.W_OK), \
+    "No permission to write in the specified directory: {0}".format(outdir)
+
 print("xpclr v{0}".format(xpclr.__version__))
 chromosome = args.chrom
 

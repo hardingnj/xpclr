@@ -4,4 +4,3 @@ pandas
 scipy
 math
 h5py
-sh
