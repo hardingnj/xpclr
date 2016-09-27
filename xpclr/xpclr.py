@@ -9,7 +9,6 @@
 
 import numpy as np
 from scipy.spatial.distance import squareform
-from scipy.optimize import minimize_scalar
 from scipy.stats import binom
 from scipy.integrate import romberg, quad
 from bisect import bisect_right, bisect_left
@@ -219,34 +218,28 @@ def calculate_cl_romberg(sc, indata):
     return -ml
 
 
-def compute_xpclr(dat):
+def compute_xpclr(dat, selection_cfs):
 
     # values of dist cannot be 0. Equiv to ~10 bp
 
-    def fx(s_coef):
-        return calculate_cl_romberg(s_coef, dat)
+    lliks = []
+    maximum_li = np.inf
+    maxli_sc = 0.0
 
-    res = minimize_scalar(fx, method="brent",
-                          options={"xtol": 0.0005})
+    for s_coef in selection_cfs:
+
+        ll = calculate_cl_romberg(s_coef, dat)
+        lliks.append(ll)
+        if ll < maximum_li:
+            maximum_li = ll
+            maxli_sc = s_coef
+        else:
+            break
 
     # maximum Likelihood selec coef and recombination pos
     # removed the np.round on this line, as if rec dist up or down can go
     # beyond boundary
-    maxli_sc = res.x
-
-    # likelihood of above sc
-    maximum_li = res.fun
-
-    if maxli_sc > 0:
-        null_model_li = calculate_cl_romberg(0, dat)
-    else:
-        null_model_li = res.fun
-
-    if null_model_li < maximum_li:
-        print("Convergence failed.", res, null_model_li)
-        return np.repeat(np.nan, 3)
-    elif null_model_li == maximum_li:
-        maxli_sc = 0.0
+    null_model_li = lliks[0]
 
     # return maxL, L of null model, maxL sel coef and maxL rp
     # if null model is maxL model, sc=0, and rp is meaningless
@@ -284,7 +277,9 @@ def determine_weights(genotypes, ldcutoff, isphased=False):
 
 def xpclr_scan(gt1, gt2, bpositions, windows, geneticd=None, ldcutoff=0.95,
                phased=False, maxsnps=200, minsnps=10, rrate=1e-8,
-               verbose=False):
+               sel_coefs=(0.0, 0.00001, 0.00005, 0.0001, 0.0002, 0.0004, 0.0006,
+                          0.0008, 0.001, 0.003, 0.005, 0.01, 0.05, 0.08, 0.1,
+                          0.15), verbose=False):
 
     if geneticd is None:
         geneticd = bpositions * rrate
@@ -341,7 +336,7 @@ def xpclr_scan(gt1, gt2, bpositions, windows, geneticd=None, ldcutoff=0.95,
                                  np.repeat(w, distance.size),
                                  weights)).T
 
-        li_data[i] = compute_xpclr(window_data)
+        li_data[i] = compute_xpclr(window_data, sel_coefs)
 
     if verbose:
         print("...done")
