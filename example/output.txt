@@ -1,2 +1,0 @@
-id	chrom	start	stop	pos_start	pos_stop	modelL	nullL	sel_coef	nSNPs	nSNPs_avail	xpclr	xpclr_norm
-1_00000033_00009988	1	1	20000	33	9988	-1569.4726718116797	-1569.4726718116797	1.8144799390456274e-11	200.0	200.0	0.0	

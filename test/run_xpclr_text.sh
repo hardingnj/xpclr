@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python ../bin/compute_xpclr.py \
+xpclr \
   --map ../example/mapfile.snp \
   --popA ../example/genotype1.geno \
   --popB ../example/genotype2.geno \
