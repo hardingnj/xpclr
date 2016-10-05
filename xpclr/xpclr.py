@@ -105,12 +105,8 @@ def pdf_integral(p1, data):
     xj, nj, c, p2, var = data
 
     dens = pdf(p1, data=data[2:])
-    bin_comp = binom.logpmf(xj, nj, p=p1)
 
-    # should think about whether I return the log or the value. I suspect the
-    # value is easier to integrate??
-    x = np.exp(np.log(dens) + bin_comp)
-    return x
+    return dens * binom.pmf(xj, nj, p=p1)
 
 
 # This is recoded from the implementation of xpclr. I do not think it represents
@@ -142,14 +138,19 @@ def chen_likelihood(values):
         i_base = quad(pdf, a=0.001, b=0.999, args=(values[2:],),
                       epsrel=0.001, epsabs=0, full_output=1)
 
-        ratio = np.log(i_likl[0]) - np.log(i_base[0])
-
-        if np.isnan(ratio) or ratio == -np.inf:
-            ratio = -1800
-
         if w:
             print(w[-1].message)
-            print(i_likl, i_base)
+            print(i_likl)
+            print(i_base)
+
+    like_i, like_b = i_likl[0], i_base[0]
+
+    if like_i == 0.0:
+        ratio = -1800
+    elif like_b == 0.0:
+        ratio = -1800
+    else:
+        ratio = np.log(like_i) - np.log(like_b)
 
     return ratio
 
@@ -267,11 +268,15 @@ def determine_weights(genotypes, ldcutoff, isphased=False):
     if isphased:
         d = genotypes.to_haplotypes()
     else:
-        d = genotypes.to_n_alt()
+        d = genotypes.to_n_alt(fill=-1)
 
-    ld = allel.stats.ld.rogers_huff_r(np.array(d))
+    # nans are possible, but rare, ie where only alts in A are at positions
+    # missing in B. We consider these sites in LD. Oh for imputation!
+    ld = allel.stats.ld.rogers_huff_r(d[:], fill=1.0)
 
-    above_cut = np.abs(squareform(ld)) > ldcutoff
+    above_cut = squareform(ld**2) > ldcutoff
+
+    # add one as self ld reported as 0
     return 1/(1 + np.sum(above_cut, axis=1))
 
 
@@ -323,7 +328,7 @@ def xpclr_scan(gt1, gt2, bpositions, windows, geneticd=None, ldcutoff=0.95,
 
         ixspan[i] = np.take(bpositions, (ix[0], ix[-1]))
 
-        weights = determine_weights(gt1.take(ix, axis=0), ldcutoff=ldcutoff,
+        weights = determine_weights(gt2.take(ix, axis=0), ldcutoff=ldcutoff,
                                     isphased=phased)
 
         dq = np.take(geneticd, ix)
