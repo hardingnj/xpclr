@@ -17,13 +17,13 @@ def load_hdf5_data(hdf5_fn, chrom, s1, s2, gdistkey=None):
 
     idx1 = np.array([sample_name.index(sid) for sid in s1])
     idx2 = np.array([sample_name.index(sid) for sid in s2])
-    h5fh = h5py.File(hdf5_fn)[chrom]
 
+    h5fh = h5py.File(hdf5_fn, mode="r")[chrom]
     g = allel.GenotypeCArray.from_hdf5(h5fh["calldata"]["genotype"])
 
     pos = allel.SortedIndex(h5fh["variants"]["POS"][:])
     if gdistkey is not None:
-        gdist = h5fh["variants"]["POS"][:]
+        gdist = h5fh["variants"][gdistkey][:]
     else:
         gdist = None
 
