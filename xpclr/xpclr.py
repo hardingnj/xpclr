@@ -1,12 +1,5 @@
 # functions to run an XPCLR scan
 
-# TO DO:
-#1 add code to read in from text file as GenotypedChunkedArray. Talk to AM.
-
-#2 run through some kind of python analysis to id bottlenecks
-
-#3 Think about cacheing. a Euclidean vector would be ace.
-
 import numpy as np
 from scipy.spatial.distance import squareform
 from scipy.stats import binom
@@ -18,7 +11,7 @@ import warnings
 from functools import lru_cache
 
 
-## FUNCTIONS ###################################################################
+# FUNCTIONS ###################################################################
 def estimate_omega(q1, q2):
     """
     :param q1: array of alt allele freq in pop1
