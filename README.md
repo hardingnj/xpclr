@@ -77,5 +77,5 @@ Space delimited file, containing 0/1s with sample haplotypes as columns, and row
 `.map`
 Space delimited file. 6 columns: ID, chromosome, Genetic Distance, Position, REF, ALT.
 
-For examples of these files see the [example](https://github.com/hardingnj/xpclr/tree/master/example) folder. 
+For examples of these files see the [fixture](https://github.com/hardingnj/xpclr/tree/master/fixture) folder used for testing.
 
