@@ -74,8 +74,8 @@ Or
 `.geno`
 Space delimited file, containing 0/1s with sample haplotypes as columns, and rows as SNPs.
 
-`map`
+`.map`
 Space delimited file. 6 columns: ID, chromosome, Genetic Distance, Position, REF, ALT.
 
-For examples see the [example](https://github.com/hardingnj/xpclr/tree/master/example) folder. 
+For examples of these files see the [example](https://github.com/hardingnj/xpclr/tree/master/example) folder. 
 
