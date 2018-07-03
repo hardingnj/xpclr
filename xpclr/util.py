@@ -14,7 +14,7 @@ def load_hdf5_data(hdf5_fn, chrom, s1, s2, gdistkey=None):
     idx2 = np.array([sample_name.index(sid) for sid in s2])
 
     h5fh = h5py.File(hdf5_fn, mode="r")[chrom]
-    g = allel.GenotypeCArray.from_hdf5(h5fh["calldata"]["genotype"])
+    g = allel.GenotypeChunkedArray.from_hdf5(h5fh["calldata"]["genotype"])
 
     pos = allel.SortedIndex(h5fh["variants"]["POS"][:])
     if gdistkey is not None:
@@ -33,10 +33,10 @@ def load_text_format_data(mapfn, pop_a_fn, pop_b_fn):
     vartbl = allel.VariantChunkedTable(tbl.to_records(), index="POS")
 
     d1 = np.loadtxt(pop_a_fn, dtype="int8")
-    geno1 = allel.GenotypeCArray(d1.reshape((d1.shape[0], -1, 2)))
+    geno1 = allel.GenotypeChunkedArray(d1.reshape((d1.shape[0], -1, 2)))
 
     d2 = np.loadtxt(pop_b_fn, dtype="int8")
-    geno2 = allel.GenotypeCArray(d2.reshape((d2.shape[0], -1, 2)))
+    geno2 = allel.GenotypeChunkedArray(d2.reshape((d2.shape[0], -1, 2)))
 
     return geno1, geno2, allel.SortedIndex(vartbl.POS[:]), vartbl.GDist[:]
 
