@@ -1,3 +1,4 @@
 __version__ = "0.15.0"
 
-from .xpclr import *
+from xpclr import xpclr
+from xpclr import util
