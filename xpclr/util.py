@@ -7,11 +7,14 @@ import numpy as np
 #FUNCTIONS
 def load_hdf5_data(hdf5_fn, chrom, s1, s2, gdistkey=None):
 
-    samples = h5py.File(hdf5_fn)[chrom]["samples"][:]
-    sample_name = [sid.decode() for sid in samples.tolist()]
+    samples1 = get_sample_ids(s1)
+    samples2 = get_sample_ids(s2)
 
-    idx1 = np.array([sample_name.index(sid) for sid in s1])
-    idx2 = np.array([sample_name.index(sid) for sid in s2])
+    samples_x = h5py.File(hdf5_fn)[chrom]["samples"][:]
+    sample_name = [sid.decode() for sid in samples_x.tolist()]
+
+    idx1 = np.array([sample_name.index(sid) for sid in samples1])
+    idx2 = np.array([sample_name.index(sid) for sid in samples2])
 
     h5fh = h5py.File(hdf5_fn, mode="r")[chrom]
     g = allel.GenotypeChunkedArray.from_hdf5(h5fh["calldata"]["genotype"])
@@ -72,7 +75,7 @@ def load_vcf_wrapper(path, seqid, samples):
     return p, g
 
 
-def load_vcf_format_data(vcf_fn, chrom, s1, s2):
+def load_vcf_format_data(vcf_fn, chrom, s1, s2, gdistkey=None):
 
     #    geno1, geno2, pos = q, q, q
     samples1 = get_sample_ids(s1)

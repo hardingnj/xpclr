@@ -14,24 +14,28 @@ psr = argparse.ArgumentParser(
 # files:
 psr.add_argument('--out', "-O", required=True, help='output file')
 
-# data inputs for hdf5 format:
-psr.add_argument('--hdf5', "-I", required=False, help='input hdf5 filestem',
+psr.add_argument('--format', "-F", required=False, default="vcf",
+                 help='input expected. One of "vcf" (default), "hdf5", or "txt"')
+
+
+# data inputs for hdf5/VCF format:
+psr.add_argument('--input', '-I', required=False, help='input file vcf or hdf5',
                  default=None, action='store')
 
-psr.add_argument('--gdisthdf5', required=False, default=None, type=str,
-                 help='key for genetic position in variants table of hdf5')
+psr.add_argument('--gdistkey', required=False, default=None, type=str,
+                 help='key for genetic position in variants table of hdf5/VCF')
 
 psr.add_argument('--samplesA', '-Sa', action='store', default=None,
                  dest='samplesA', required=False,
-                 help='Which samples comprise population A. Comma separated')
+                 help='Samples comprising population A. Comma separated list or path to file with each ID on a line')
 
 psr.add_argument('--samplesB', '-Sb', action='store', default=None,
                  dest='samplesB', required=False,
-                 help='Which samples comprise population B. Comma separated')
+                 help='Samples comprising population B. Comma separated list or path to file with each ID on a line')
 
+# only used when input is hdf5 or VCF
 psr.add_argument('--rrate', '-R', dest='rrate', action='store',
                  default=1e-8, help='recombination rate per base')
-
 
 # data inputs for text format
 psr.add_argument('--map', required=False, default=None, action='store',
@@ -43,11 +47,11 @@ psr.add_argument('--popA', required=False, default=None, action='store',
 psr.add_argument('--popB', required=False, default=None, action='store',
                  help='filepath to population A genotypes')
 
+# parameters
 # chrom
 psr.add_argument('--chr', '-C', required=True, dest='chrom', action='store',
                  help='Which contig analysis is based on')
 
-# parameters
 psr.add_argument('--ld', '-L', dest='ldcutoff', action='store',
                  default=0.95, help='LD cutoff to apply for weighting')
 
@@ -63,13 +67,13 @@ psr.add_argument('--minsnps', '-N', dest='minsnps', action='store',
                  default=10, help='min SNPs in a window')
 
 psr.add_argument('--size', dest='size', action='store',
-                 default=20000, help='window size', type=int)
+                 default=20000, help='window size in base pairs', type=int)
 psr.add_argument('--start', dest='start', action='store', type=int,
                  default=1, help='start base position for windows')
 psr.add_argument('--stop', dest='stop', action='store', default=None, type=int,
                  help='stop base position for windows')
 psr.add_argument('--step', dest='step', action='store', default=20000, type=int,
-                 help='windows step for slide')
+                 help='step size for sliding windows')
 
 args = psr.parse_args()
 
@@ -84,24 +88,32 @@ print("xpclr v{0}".format(xpclr.__version__))
 chromosome = args.chrom
 
 # if mode is "hdf5"
-if args.hdf5 is not None:
+if args.format == 'vcf':
 
-    samples1 = [sample_id.strip() for sample_id in args.samplesA.split(",")]
-    samples2 = [sample_id.strip() for sample_id in args.samplesB.split(",")]
+    g1, g2, positions, genetic_dist = util.load_vcf_format_data(
+        args.input.strip(),
+        chromosome,
+        args.samplesA,
+        args.samplesB,
+        gdistkey=args.gdistkey)
+
+elif args.format == 'hdf5':
 
     g1, g2, positions, genetic_dist = util.load_hdf5_data(
-        args.hdf5.strip(),
+        args.input.strip(),
         chromosome,
-        samples1,
-        samples2,
-        gdistkey=args.gdisthdf5)
+        args.samplesA,
+        args.samplesB,
+        gdistkey=args.gdistkey)
 
-else:
+elif args.format == 'txt':
     # else if mode is text
     g1, g2, positions, genetic_dist = util.load_text_format_data(
         args.map,
         args.popA,
         args.popB)
+else:
+    raise ValueError("Format must be one of vcf/hdf5/txt")
 
 
 ac1 = g1.count_alleles()
