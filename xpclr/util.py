@@ -2,9 +2,11 @@ import pandas as pd
 import h5py
 import allel
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 
-#FUNCTIONS
+# FUNCTIONS
 def load_hdf5_data(hdf5_fn, chrom, s1, s2, gdistkey=None):
 
     samples1 = get_sample_ids(s1)
@@ -49,11 +51,11 @@ def get_sample_ids(sample_input):
 
     if "," in sample_input:
         # assume split and return
-        print("Assuming sample IDs given as comma-separated strings.")
+        logger.debug("Assuming sample IDs given as comma-separated strings.")
         samples = sample_input.split(",")
 
     else:
-        print("Assuming sample IDs provided in a file.")
+        logger.debug("Assuming sample IDs provided in a file.")
         with open(sample_input, "r") as reader:
             samples = [x.strip() for x in reader.readlines()]
 
