@@ -9,6 +9,8 @@ import allel
 from math import sqrt, pi
 import warnings
 from functools import lru_cache
+import logging
+logger = logging.getLogger(__name__)
 
 
 # FUNCTIONS ###################################################################
@@ -132,9 +134,7 @@ def chen_likelihood(values):
                       epsrel=0.001, epsabs=0, full_output=1)
 
         if w:
-            print(w[-1].message)
-            print(i_likl)
-            print(i_base)
+            logger.warning(w[-1].message, i_likl, i_base)
 
     like_i, like_b = i_likl[0], i_base[0]
 
@@ -155,7 +155,7 @@ def chen_likelihood(values):
 # does not work with Romberg integration!
 def harding_likelihood(values):
 
-    print("Not to be used as Romberg does not work on non cont diffs")
+    logger.warning("Not to be used as Romberg does not work on non cont diffs")
     with warnings.catch_warnings(record=True) as w:
 
         # Cause all warnings to always be triggered.
@@ -168,7 +168,7 @@ def harding_likelihood(values):
             cl = -1800
 
         if w:
-            print(w[-1].message)
+            logger.warning(w[-1].message)
 
     return cl
 
@@ -261,10 +261,10 @@ def determine_weights(genotypes, ldcutoff, isphased=False):
     if isphased:
         d = genotypes.to_haplotypes()
     else:
-        d = genotypes.to_n_alt(fill=-1)
+        d = genotypes.to_n_alt(fill=0)
 
     # nans are possible, but rare, ie where only alts in A are at positions
-    # missing in B. We consider these sites in LD. Oh for imputation!
+    # missing in B. We consider these sites in LD and they are dropped.
     ld = allel.stats.ld.rogers_huff_r(d[:], fill=1.0)
 
     above_cut = squareform(ld**2) > ldcutoff
@@ -277,13 +277,11 @@ def xpclr_scan(gt1, gt2, bpositions, windows, geneticd=None, ldcutoff=0.95,
                phased=False, maxsnps=200, minsnps=10, rrate=1e-8,
                sel_coefs=(0.0, 0.00001, 0.00005, 0.0001, 0.0002, 0.0004, 0.0006,
                           0.0008, 0.001, 0.003, 0.005, 0.01, 0.05, 0.08, 0.1,
-                          0.15), verbose=False):
+                          0.15)):
 
     if geneticd is None:
         geneticd = bpositions * rrate
-        if verbose:
-            print("No genetic distance provided; using rrate of {0}"
-                  .format(rrate))
+        logger.info("No genetic distance provided; using rrate of {0}/bp".format(rrate))
 
     assert minsnps >= 2, "Minimum SNPs cannot be set at any fewer than 2"
 
@@ -291,8 +289,7 @@ def xpclr_scan(gt1, gt2, bpositions, windows, geneticd=None, ldcutoff=0.95,
     ac2 = gt2.count_alleles()
     w = estimate_omega(q1=ac1.to_frequencies()[:, 1],
                        q2=ac2.to_frequencies()[:, 1])
-    if verbose:
-        print("omega: {0}".format(w))
+    logger.info("Omega estimated as : {0:3f}".format(w))
 
     count_calls = ac1.sum(axis=1)[:]
     count_alt = ac1[:, 1]
@@ -305,9 +302,8 @@ def xpclr_scan(gt1, gt2, bpositions, windows, geneticd=None, ldcutoff=0.95,
 
     for i, (start, end) in enumerate(windows):
 
-        if verbose and not i % 10:
-            print("Processing window {0}/{1}...".
-                  format(i + 1, windows.shape[0]))
+        if 0 == (i % 10):
+            logger.debug("Processing window {0}/{1}...".format(i + 1, windows.shape[0]))
 
         ix, n_avail = determine_window(bpositions, start, end, maxsnps)
 
@@ -335,9 +331,6 @@ def xpclr_scan(gt1, gt2, bpositions, windows, geneticd=None, ldcutoff=0.95,
                                  weights)).T
 
         li_data[i] = compute_xpclr(window_data, sel_coefs)
-
-    if verbose:
-        print("...done")
 
     # modelL, nullL, selcoef, n snps, actual window edges.
     return li_data.T[0], li_data.T[1], li_data.T[2], nsnp, nsnp_avail, ixspan

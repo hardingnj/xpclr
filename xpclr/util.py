@@ -2,16 +2,21 @@ import pandas as pd
 import h5py
 import allel
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 
-#FUNCTIONS
+# FUNCTIONS
 def load_hdf5_data(hdf5_fn, chrom, s1, s2, gdistkey=None):
 
-    samples = h5py.File(hdf5_fn)[chrom]["samples"][:]
-    sample_name = [sid.decode() for sid in samples.tolist()]
+    samples1 = get_sample_ids(s1)
+    samples2 = get_sample_ids(s2)
 
-    idx1 = np.array([sample_name.index(sid) for sid in s1])
-    idx2 = np.array([sample_name.index(sid) for sid in s2])
+    samples_x = h5py.File(hdf5_fn)[chrom]["samples"][:]
+    sample_name = [sid.decode() for sid in samples_x.tolist()]
+
+    idx1 = np.array([sample_name.index(sid) for sid in samples1])
+    idx2 = np.array([sample_name.index(sid) for sid in samples2])
 
     h5fh = h5py.File(hdf5_fn, mode="r")[chrom]
     g = allel.GenotypeChunkedArray.from_hdf5(h5fh["calldata"]["genotype"])
@@ -39,6 +44,54 @@ def load_text_format_data(mapfn, pop_a_fn, pop_b_fn):
     geno2 = allel.GenotypeChunkedArray(d2.reshape((d2.shape[0], -1, 2)))
 
     return geno1, geno2, allel.SortedIndex(vartbl.POS[:]), vartbl.GDist[:]
+
+
+# function that either splits a string or reads a file
+def get_sample_ids(sample_input):
+
+    if "," in sample_input:
+        # assume split and return
+        logger.debug("Assuming sample IDs given as comma-separated strings.")
+        samples = sample_input.split(",")
+
+    else:
+        logger.debug("Assuming sample IDs provided in a file.")
+        with open(sample_input, "r") as reader:
+            samples = [x.strip() for x in reader.readlines()]
+
+    return samples
+
+
+def load_vcf_wrapper(path, seqid, samples):
+
+    callset = allel.read_vcf(
+        path,
+        region=seqid,
+        fields=['variants/POS', 'calldata/GT', 'samples'],
+        tabix="tabix",
+        samples=samples)
+
+    p = allel.SortedIndex(callset["variants/POS"])
+    g = allel.GenotypeArray(callset['calldata/GT'])
+
+    return p, g
+
+
+def load_vcf_format_data(vcf_fn, chrom, s1, s2, gdistkey=None):
+
+    #    geno1, geno2, pos = q, q, q
+    samples1 = get_sample_ids(s1)
+    samples2 = get_sample_ids(s2)
+    pos1, geno1 = load_vcf_wrapper(vcf_fn, chrom, samples1)
+    pos2, geno2 = load_vcf_wrapper(vcf_fn, chrom, samples2)
+
+    assert np.array_equal(pos1, pos2), "POS fields not the same"
+    assert geno1.shape[0] == pos1.shape[0], "For samples 1, genotypes do not match positions"
+    assert geno2.shape[0] == pos2.shape[0], "For samples 2, genotypes do not match positions"
+    assert geno1.shape[1] == len(samples1)
+    assert geno2.shape[1] == len(samples2)
+
+    return geno1, geno2, pos1, None
 
 
 def tabulate_results(chrom, model_li, null_li, selectionc,

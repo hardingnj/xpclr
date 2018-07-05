@@ -1,4 +1,4 @@
-__version__ = "0.16.0"
+__version__ = "1.0.0"
 
-from xpclr import xpclr
+from xpclr import methods
 from xpclr import util
