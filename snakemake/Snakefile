@@ -3,17 +3,23 @@ configfile: "config.yml"
 rule xpclr:
   input:
     vcf='data/ag1000g.crosses.phase1.ar3sites.3L.vcf.gz',
+    tbi='data/ag1000g.crosses.phase1.ar3sites.3L.vcf.gz.tbi',
     samplesA='samplesA.txt',
     samplesB='samplesB.txt'
   output:
     txt='output/results.txt'
+  params:
+    logging=10,
+    stop=1000000
   shell:
     "xpclr --format vcf "
     "--input {input.vcf} "
     "--out {output.txt} "
     "--samplesA {input.samplesA} "
     "--samplesB {input.samplesB} "
+    "--stop {params.stop} "
     "--chr 3L "
+    "-V {params.logging}"
 
 rule down_vcf:
   output:
@@ -23,7 +29,6 @@ rule down_vcf:
   shell:
     "curl -L {params.path} > {output.vcf}"
      
-
 rule index_vcf:
   input:
     vcf="{path}.vcf.gz"
