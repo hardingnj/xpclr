@@ -28,17 +28,9 @@ Interface is under development and may change/break in future.
 usage: xpclr [-h] --out OUT [--format FORMAT] [--input INPUT]
              [--gdistkey GDISTKEY] [--samplesA SAMPLESA] [--samplesB SAMPLESB]
              [--rrate RRATE] [--map MAP] [--popA POPA] [--popB POPB] --chr
-             CHROM [--ld LDCUTOFF] [--phased] [--verbose] [--maxsnps MAXSNPS]
-             [--minsnps MINSNPS] [--size SIZE] [--start START] [--stop STOP]
-             [--step STEP]
-xpclr: error: the following arguments are required: --out/-O, --chr/-C
-(xpclr) njh@njh-OptiPlex-9020 ~/git/xpclr $ xpclr -h
-usage: xpclr [-h] --out OUT [--format FORMAT] [--input INPUT]
-             [--gdistkey GDISTKEY] [--samplesA SAMPLESA] [--samplesB SAMPLESB]
-             [--rrate RRATE] [--map MAP] [--popA POPA] [--popB POPB] --chr
-             CHROM [--ld LDCUTOFF] [--phased] [--verbose] [--maxsnps MAXSNPS]
-             [--minsnps MINSNPS] [--size SIZE] [--start START] [--stop STOP]
-             [--step STEP]
+             CHROM [--ld LDCUTOFF] [--phased] [--verbose VERBOSE]
+             [--maxsnps MAXSNPS] [--minsnps MINSNPS] [--size SIZE]
+             [--start START] [--stop STOP] [--step STEP]
 
 Tool to calculate XP-CLR as per Chen, Patterson, Reich 2010
 
@@ -67,7 +59,9 @@ optional arguments:
   --ld LDCUTOFF, -L LDCUTOFF
                         LD cutoff to apply for weighting
   --phased, -P          whether data is phased for more precise r2 calculation
-  --verbose, -V         whether to be verbose
+  --verbose VERBOSE, -V VERBOSE
+                        How verbose to be in logging. 10=DEBUG, 20=INFO,
+                        30=WARN, 40=ERROR, 50=CRITICAL
   --maxsnps MAXSNPS, -M MAXSNPS
                         max SNPs in a window
   --minsnps MINSNPS, -N MINSNPS
@@ -76,7 +70,6 @@ optional arguments:
   --start START         start base position for windows
   --stop STOP           stop base position for windows
   --step STEP           step size for sliding windows
-
 ```
 
 ## File formats
