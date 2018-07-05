@@ -1,0 +1,33 @@
+configfile: "config.yml"
+
+rule xpclr:
+  input:
+    vcf='data/ag1000g.crosses.phase1.ar3sites.3L.vcf.gz',
+    samplesA='samplesA.txt',
+    samplesB='samplesB.txt'
+  output:
+    txt='output/results.txt'
+  shell:
+    "xpclr --format vcf "
+    "--input {input.vcf} "
+    "--out {output.txt} "
+    "--samplesA {input.samplesA} "
+    "--samplesB {input.samplesB} "
+    "--chr 3L "
+
+rule down_vcf:
+  output:
+    vcf='data/ag1000g.crosses.phase1.ar3sites.3L.vcf.gz',
+  params:
+    path=config["path"]
+  shell:
+    "curl -L {params.path} > {output.vcf}"
+     
+
+rule index_vcf:
+  input:
+    vcf="{path}.vcf.gz"
+  output:
+    tbi="{path}.vcf.gz.tbi"
+  shell:
+    "tabix -p vcf {input.vcf}"
