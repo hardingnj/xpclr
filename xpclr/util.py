@@ -1,5 +1,4 @@
 import pandas as pd
-import h5py
 import allel
 import numpy as np
 import logging
@@ -8,6 +7,8 @@ logger = logging.getLogger(__name__)
 
 # FUNCTIONS
 def load_hdf5_data(hdf5_fn, chrom, s1, s2, gdistkey=None):
+
+    import hdf5
 
     samples1 = get_sample_ids(s1)
     samples2 = get_sample_ids(s2)
@@ -22,6 +23,32 @@ def load_hdf5_data(hdf5_fn, chrom, s1, s2, gdistkey=None):
     g = allel.GenotypeChunkedArray.from_hdf5(h5fh["calldata"]["genotype"])
 
     pos = allel.SortedIndex(h5fh["variants"]["POS"][:])
+    if gdistkey is not None:
+        gdist = h5fh["variants"][gdistkey][:]
+    else:
+        gdist = None
+
+    return g.take(idx1, axis=1), g.take(idx2, axis=1), pos, gdist
+
+
+def load_zarr_data(zarr_fn, chrom, s1, s2, gdistkey=None):
+
+    import zarr
+
+    samples1 = get_sample_ids(s1)
+    samples2 = get_sample_ids(s2)
+
+    zfh = zarr.open_group(zarr_fn, mode="r")[chrom]
+
+    samples_x = zfh["samples"][:]
+    sample_name = [sid.decode() for sid in samples_x.tolist()]
+
+    idx1 = np.array([sample_name.index(sid) for sid in samples1])
+    idx2 = np.array([sample_name.index(sid) for sid in samples2])
+
+    g = allel.GenotypeChunkedArray(zfh["calldata"]["genotype"])
+
+    pos = allel.SortedIndex(zfh["variants"]["POS"][:])
     if gdistkey is not None:
         gdist = h5fh["variants"][gdistkey][:]
     else:
