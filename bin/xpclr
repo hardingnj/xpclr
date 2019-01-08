@@ -18,7 +18,7 @@ def main():
     psr.add_argument('--out', "-O", required=True, help='output file')
 
     psr.add_argument('--format', "-F", required=False, default="vcf",
-                     help='input expected. One of "vcf" (default), "hdf5", or "txt"')
+                     help='input expected. One of "vcf" (default), "hdf5", "zarr" or "txt"')
 
     # data inputs for hdf5/VCF format:
     psr.add_argument('--input', '-I', required=False, help='input file vcf or hdf5',
@@ -112,6 +112,17 @@ def main():
             args.samplesB,
             gdistkey=args.gdistkey)
         logging.info("HDF5 loading complete")
+
+    elif args.format == 'zarr':
+
+        logging.info("Loading zarr")
+        g1, g2, positions, genetic_dist = xpclr.util.load_zarr_data(
+            args.input.strip(),
+            chromosome,
+            args.samplesA,
+            args.samplesB,
+            gdistkey=args.gdistkey)
+        logging.info("zarr loading complete")
 
     elif args.format == 'txt':
         # else if mode is text

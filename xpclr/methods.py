@@ -265,9 +265,9 @@ def determine_weights(genotypes, ldcutoff, isphased=False):
 
     # nans are possible, but rare, ie where only alts in A are at positions
     # missing in B. We consider these sites in LD and they are dropped.
-    ld = allel.stats.ld.rogers_huff_r(d[:], fill=1.0)
+    ld = allel.stats.ld.rogers_huff_r(d[:])
 
-    above_cut = squareform(ld**2) > ldcutoff
+    above_cut = (squareform(ld**2) > ldcutoff) | (squareform(np.isnan(ld)))
 
     # add one as self ld reported as 0
     return 1/(1 + np.sum(above_cut, axis=1))
