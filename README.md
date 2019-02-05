@@ -13,7 +13,7 @@ python setup.py install
 
 Also available via conda via the `bioconda` channel:
 ```
-conda install xpclr
+conda install xpclr -c bioconda
 ```
 
 ## Use
