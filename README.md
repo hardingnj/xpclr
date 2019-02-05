@@ -11,7 +11,10 @@ Clone this git repository into your working directory and `cd`.
 python setup.py install
 ```
 
-Not yet available on PyPi/bioconda
+Also available via conda via the `bioconda` channel:
+```
+conda install xpclr
+```
 
 ## Use
 

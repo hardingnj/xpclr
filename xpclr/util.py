@@ -99,7 +99,7 @@ def load_vcf_wrapper(path, seqid, samples):
         samples=samples)
 
     p = allel.SortedIndex(callset["variants/POS"])
-    g = allel.GenotypeArray(callset['calldata/GT'])
+    g = allel.GenotypeArray(callset['calldata/genotype'])
 
     return p, g
 
