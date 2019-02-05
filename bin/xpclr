@@ -37,7 +37,7 @@ def main():
 
     # only used when input is hdf5 or VCF
     psr.add_argument('--rrate', '-R', dest='rrate', action='store',
-                     default=1e-8, help='recombination rate per base')
+                     default=1e-8, help='recombination rate per base', type=float)
 
     # data inputs for text format
     psr.add_argument('--map', required=False, default=None, action='store',
@@ -55,7 +55,7 @@ def main():
                      help='Which contig analysis is based on')
 
     psr.add_argument('--ld', '-L', dest='ldcutoff', action='store',
-                     default=0.95, help='LD cutoff to apply for weighting')
+                     default=0.95, help='LD cutoff to apply for weighting', type=float)
 
     psr.add_argument('--phased', '-P', dest='phased', action='store_true',
                      help='whether data is phased for more precise r2 calculation')
@@ -64,9 +64,9 @@ def main():
                      help='How verbose to be in logging. 10=DEBUG, 20=INFO, 30=WARN, 40=ERROR, 50=CRITICAL')
 
     psr.add_argument('--maxsnps', '-M', dest='maxsnps', action='store',
-                     default=200, help='max SNPs in a window')
+                     default=200, help='max SNPs in a window', type=int)
     psr.add_argument('--minsnps', '-N', dest='minsnps', action='store',
-                     default=10, help='min SNPs in a window')
+                     default=10, help='min SNPs in a window', type=int)
 
     psr.add_argument('--size', dest='size', action='store',
                      default=20000, help='window size in base pairs', type=int)
