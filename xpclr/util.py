@@ -89,7 +89,7 @@ def get_sample_ids(sample_input):
     return samples
 
 
-def load_vcf_wrapper(path, seqid, samples):
+def load_vcf_wrapper(path, seqid, samples, samples_path):
 
     callset = allel.read_vcf(
         path,
@@ -98,8 +98,11 @@ def load_vcf_wrapper(path, seqid, samples):
         tabix="tabix",
         samples=samples)
 
+    assert "samples" in callset.keys(), "None of the samples provided in {0!r} are found in {1!r}".format(
+        samples_path, path)
+
     p = allel.SortedIndex(callset["variants/POS"])
-    g = allel.GenotypeArray(callset['calldata/genotype'])
+    g = allel.GenotypeArray(callset['calldata/GT'])
 
     return p, g
 
@@ -109,8 +112,8 @@ def load_vcf_format_data(vcf_fn, chrom, s1, s2, gdistkey=None):
     #    geno1, geno2, pos = q, q, q
     samples1 = get_sample_ids(s1)
     samples2 = get_sample_ids(s2)
-    pos1, geno1 = load_vcf_wrapper(vcf_fn, chrom, samples1)
-    pos2, geno2 = load_vcf_wrapper(vcf_fn, chrom, samples2)
+    pos1, geno1 = load_vcf_wrapper(vcf_fn, chrom, samples1, s1)
+    pos2, geno2 = load_vcf_wrapper(vcf_fn, chrom, samples2, s2)
 
     assert np.array_equal(pos1, pos2), "POS fields not the same"
     assert geno1.shape[0] == pos1.shape[0], "For samples 1, genotypes do not match positions"
