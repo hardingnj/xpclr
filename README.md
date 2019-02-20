@@ -93,3 +93,23 @@ Space delimited file. 6 columns: ID, chromosome, Genetic Distance, Position, REF
 
 For examples of these files see the [fixture](https://github.com/hardingnj/xpclr/tree/master/fixture) folder used for testing.
 
+## Outputs
+
+`modelL`: The likelihood of the best fitting selection coefficient
+
+`nullL`: The likelihood of the null model (selection coefficient = 0.0).
+
+`sel_coef`: The best fitting selection coefficient
+
+`nSNPs`: Number of SNPs in a window. Suggest to ignore windows where this is small
+
+`nSNPs avail`: When number of SNPs in a window is greater than the maximum specified. If this is consistently much larger than nSNPs, it 
+suggests your window size is too large.
+
+`start`, `stop`: start and stop positions of the windows.
+
+`pos_start`, `pos_stop`: actual limits of the used SNPs.
+
+`xpclr`: The log likelihood ratio of the best fitting model vs the null: `2 * (modelL - nullL)`
+
+`xpclr_norm`: Normalized `xpclr` ie `(xpclr - np.nanmean(xpclr))/np.nanstd(xpclr)`
