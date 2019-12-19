@@ -22,7 +22,7 @@ with open('README.md') as f:
 
 MAINTAINER = 'Nicholas Harding',
 
-MAINTAINER_EMAIL = 'njh@well.ox.ac.uk',
+MAINTAINER_EMAIL = 'nicholas.harding@bdi.ox.ac.uk',
 
 URL = 'https://github.com/hardingnj/xpclr'
 

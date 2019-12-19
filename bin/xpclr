@@ -41,13 +41,13 @@ def main():
 
     # data inputs for text format
     psr.add_argument('--map', required=False, default=None, action='store',
-                     help='input map file as per XPCLR specs')
+                     help='If using XPCLR-style text format. Input map file as per XPCLR specs (tab separated)')
 
     psr.add_argument('--popA', required=False, default=None, action='store',
-                     help='filepath to population A genotypes')
+                     help='If using XPCLR-style text format. Filepath to population A genotypes (space separated)')
 
     psr.add_argument('--popB', required=False, default=None, action='store',
-                     help='filepath to population A genotypes')
+                     help='If using XPCLR-style text format. Filepath to population B genotypes (space separated)')
 
     # parameters
     # chrom
@@ -174,6 +174,7 @@ def main():
     # determine windows
     if args.stop is None:
         args.stop = positions[-1]
+
     spacing = np.arange(args.start, args.stop, args.step)
     scan_windows = np.vstack([spacing, spacing - 1 + args.size]).T
 

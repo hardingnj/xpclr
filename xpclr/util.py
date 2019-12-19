@@ -49,6 +49,10 @@ def load_zarr_data(zarr_fn, chrom, s1, s2, gdistkey=None):
     g = allel.GenotypeChunkedArray(zfh["calldata"]["genotype"])
 
     pos = allel.SortedIndex(zfh["variants"]["POS"][:])
+
+
+
+
     if gdistkey is not None:
         gdist = h5fh["variants"][gdistkey][:]
     else:
@@ -59,16 +63,30 @@ def load_zarr_data(zarr_fn, chrom, s1, s2, gdistkey=None):
 
 def load_text_format_data(mapfn, pop_a_fn, pop_b_fn):
 
-    tbl = pd.read_csv(mapfn, sep=" ",
-                      names=["ID", "CHROM", "GDist", "POS", "REF", "ALT"])
+    tbl = pd.read_csv(mapfn, sep="\t", header=None, engine="c")
 
-    vartbl = allel.VariantChunkedTable(tbl.to_records(), index="POS")
+    try:
+        tbl.columns = ["ID", "CHROM", "GDist", "POS", "REF", "ALT"]
+    except ValueError:
+        logger.info("File not tab delimited as expected- trying with spaces")
+        tbl = pd.read_csv(
+            mapfn, sep=" ", header=None, engine="c", names=["ID", "CHROM", "GDist", "POS", "REF", "ALT"])
+
+    try:
+        vartbl = allel.VariantChunkedTable(tbl.to_records(), index="POS")
+    except ValueError:
+        tbl = tbl.sort_values(["CHROM", "POS"])
+        logger.warning("Possible SNPs file is not sorted. Attempting to sort. This is likely to be inefficient")
+        vartbl = allel.VariantChunkedTable(tbl.to_records(), index="POS")
 
     d1 = np.loadtxt(pop_a_fn, dtype="int8")
     geno1 = allel.GenotypeChunkedArray(d1.reshape((d1.shape[0], -1, 2)))
 
     d2 = np.loadtxt(pop_b_fn, dtype="int8")
     geno2 = allel.GenotypeChunkedArray(d2.reshape((d2.shape[0], -1, 2)))
+
+    pos = allel.SortedIndex(vartbl.POS[:])
+    assert np.isnan(pos).sum() == 0, "nans values are not supported"
 
     return geno1, geno2, allel.SortedIndex(vartbl.POS[:]), vartbl.GDist[:]
 
