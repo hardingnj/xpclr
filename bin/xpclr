@@ -81,7 +81,7 @@ def main():
 
     logging.basicConfig(format=LOGFORMAT, level=args.verbose, datefmt="%Y-%m-%d %H:%M:%S")
 
-    fn = args.out
+    fn = os.path.abspath(args.out)
     outdir = os.path.dirname(fn)
 
     assert os.access(outdir, os.W_OK), \
