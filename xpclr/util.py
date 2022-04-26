@@ -104,22 +104,25 @@ def get_sample_ids(sample_input):
     return samples
 
 
-def load_vcf_wrapper(path, seqid, samples, samples_path):
+def load_vcf_wrapper(path, seqid, samples, samples_path, gdistkey):
 
+    var_gdistkey = 'variants/{0}'.format(gdistkey)
     callset = allel.read_vcf(
         path,
         region=seqid,
-        fields=['variants/POS', 'calldata/GT', 'samples'],
+        fields=['variants/POS', var_gdistkey, 'calldata/GT', 'samples'],
+        numbers = {var_gdistkey : 1},
         tabix="tabix",
         samples=samples)
 
     assert "samples" in callset.keys(), "None of the samples provided in {0!r} are found in {1!r}".format(
         samples_path, path)
-
+    
     p = allel.SortedIndex(callset["variants/POS"])
     g = allel.GenotypeArray(callset['calldata/GT'])
+    m = allel.SortedIndex(callset[var_gdistkey])
 
-    return p, g
+    return p, g, m
 
 
 def load_vcf_format_data(vcf_fn, chrom, s1, s2, gdistkey=None):
@@ -127,8 +130,8 @@ def load_vcf_format_data(vcf_fn, chrom, s1, s2, gdistkey=None):
     #    geno1, geno2, pos = q, q, q
     samples1 = get_sample_ids(s1)
     samples2 = get_sample_ids(s2)
-    pos1, geno1 = load_vcf_wrapper(vcf_fn, chrom, samples1, s1)
-    pos2, geno2 = load_vcf_wrapper(vcf_fn, chrom, samples2, s2)
+    pos1, geno1, gdist1 = load_vcf_wrapper(vcf_fn, chrom, samples1, s1, gdistkey)
+    pos2, geno2, gdist2 = load_vcf_wrapper(vcf_fn, chrom, samples2, s2, gdistkey)
 
     assert np.array_equal(pos1, pos2), "POS fields not the same"
     assert geno1.shape[0] == pos1.shape[0], "For samples 1, genotypes do not match positions"
@@ -136,7 +139,12 @@ def load_vcf_format_data(vcf_fn, chrom, s1, s2, gdistkey=None):
     assert geno1.shape[1] == len(samples1)
     assert geno2.shape[1] == len(samples2)
 
-    return geno1, geno2, pos1, None
+    if gdistkey is not None:
+        gdist = gdist1
+    else:
+        gdist = None
+
+    return geno1, geno2, pos1, gdist
 
 
 def tabulate_results(chrom, model_li, null_li, selectionc,
