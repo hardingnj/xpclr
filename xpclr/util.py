@@ -41,23 +41,20 @@ def load_zarr_data(zarr_fn, chrom, s1, s2, gdistkey=None):
     zfh = zarr.open_group(zarr_fn, mode="r")[chrom]
 
     samples_x = zfh["samples"][:]
-    sample_name = [sid.decode() for sid in samples_x.tolist()]
-
+    sample_name = [sid for sid in samples_x.tolist()]
+    
     idx1 = np.array([sample_name.index(sid) for sid in samples1])
     idx2 = np.array([sample_name.index(sid) for sid in samples2])
 
-    g = allel.GenotypeChunkedArray(zfh["calldata"]["genotype"])
+    g = allel.GenotypeChunkedArray(zfh["calldata"]["GT"])
 
     pos = allel.SortedIndex(zfh["variants"]["POS"][:])
 
-
-
-
     if gdistkey is not None:
-        gdist = h5fh["variants"][gdistkey][:]
+        gdist = zfh["variants"][gdistkey][:]
     else:
         gdist = None
-
+    
     return g.take(idx1, axis=1), g.take(idx2, axis=1), pos, gdist
 
 
