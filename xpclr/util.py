@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 # FUNCTIONS
 def load_hdf5_data(hdf5_fn, chrom, s1, s2, gdistkey=None):
 
-    import hdf5
+    import h5py 
 
     samples1 = get_sample_ids(s1)
     samples2 = get_sample_ids(s2)
@@ -20,7 +20,7 @@ def load_hdf5_data(hdf5_fn, chrom, s1, s2, gdistkey=None):
     idx2 = np.array([sample_name.index(sid) for sid in samples2])
 
     h5fh = h5py.File(hdf5_fn, mode="r")[chrom]
-    g = allel.GenotypeChunkedArray.from_hdf5(h5fh["calldata"]["genotype"])
+    g = allel.GenotypeChunkedArray(h5fh["calldata"]["GT"])
 
     pos = allel.SortedIndex(h5fh["variants"]["POS"][:])
     if gdistkey is not None:
