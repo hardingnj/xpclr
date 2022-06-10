@@ -106,7 +106,7 @@ def get_sample_ids(sample_input):
 
 def load_vcf_wrapper(path, seqid, samples, samples_path, gdistkey):
 
-    var_gdistkey = 'variants/{0}'.format(gdistkey)
+    var_gdistkey = f'variants/{gdistkey}'
     callset = allel.read_vcf(
         path,
         region=seqid,
