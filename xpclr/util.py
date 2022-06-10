@@ -128,21 +128,17 @@ def load_vcf_wrapper(path, seqid, samples, samples_path, gdistkey):
 def load_vcf_format_data(vcf_fn, chrom, s1, s2, gdistkey=None):
 
     #    geno1, geno2, pos = q, q, q
+    #    Genetic distances the same in both populations
     samples1 = get_sample_ids(s1)
     samples2 = get_sample_ids(s2)
-    pos1, geno1, gdist1 = load_vcf_wrapper(vcf_fn, chrom, samples1, s1, gdistkey)
-    pos2, geno2, gdist2 = load_vcf_wrapper(vcf_fn, chrom, samples2, s2, gdistkey)
+    pos1, geno1, gdist = load_vcf_wrapper(vcf_fn, chrom, samples1, s1, gdistkey)
+    pos2, geno2, gdist = load_vcf_wrapper(vcf_fn, chrom, samples2, s2, gdistkey)
 
     assert np.array_equal(pos1, pos2), "POS fields not the same"
     assert geno1.shape[0] == pos1.shape[0], "For samples 1, genotypes do not match positions"
     assert geno2.shape[0] == pos2.shape[0], "For samples 2, genotypes do not match positions"
     assert geno1.shape[1] == len(samples1)
     assert geno2.shape[1] == len(samples2)
-
-    if gdistkey is not None:
-        gdist = gdist1
-    else:
-        gdist = None
 
     return geno1, geno2, pos1, gdist
 
